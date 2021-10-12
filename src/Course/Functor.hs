@@ -8,7 +8,7 @@ import Course.Core
 import Course.ExactlyOne
 import Course.Optional
 import Course.List
-import qualified Prelude as P(fmap)
+import qualified Prelude as P(fmap, const)
 
 -- | All instances of the `Functor` type-class must satisfy two laws. These laws
 -- are not checked by the compiler. These laws are given as:
@@ -18,6 +18,14 @@ import qualified Prelude as P(fmap)
 --
 -- * The law of composition
 --   `∀f g x.(f . g <$> x) ≅ (f <$> (g <$> x))`
+
+-- 上面的形式等价于：
+-- fmap id = id
+-- fmap (f . g) = fmap f . fmap g
+-- fmap是<$>的前缀形式
+-- fmap :: Functor f => (a -> b) -> f a -> f b
+-- (<$>) :: Functor f => (a -> b) -> f a -> f b
+
 class Functor k where
   -- Pronounced, eff-map.
   (<$>) ::
@@ -41,8 +49,7 @@ instance Functor ExactlyOne where
     (a -> b)
     -> ExactlyOne a
     -> ExactlyOne b
-  (<$>) =
-    error "todo: Course.Functor (<$>)#instance ExactlyOne"
+  (<$>) = mapExactlyOne
 
 -- | Maps a function on the List functor.
 --
@@ -56,8 +63,7 @@ instance Functor List where
     (a -> b)
     -> List a
     -> List b
-  (<$>) =
-    error "todo: Course.Functor (<$>)#instance List"
+  (<$>) = map
 
 -- | Maps a function on the Optional functor.
 --
@@ -71,8 +77,8 @@ instance Functor Optional where
     (a -> b)
     -> Optional a
     -> Optional b
-  (<$>) =
-    error "todo: Course.Functor (<$>)#instance Optional"
+  (<$>) _ Empty = Empty
+  (<$>) f (Full x) = Full (f x)
 
 -- | Maps a function on the reader ((->) t) functor.
 --
@@ -81,10 +87,9 @@ instance Functor Optional where
 instance Functor ((->) t) where
   (<$>) ::
     (a -> b)
-    -> ((->) t a)
-    -> ((->) t b)
-  (<$>) =
-    error "todo: Course.Functor (<$>)#((->) t)"
+    -> (->) t a
+    -> (->) t b
+  (<$>) f g = f . g
 
 -- | Anonymous map. Maps a constant value on a functor.
 --
@@ -99,8 +104,7 @@ instance Functor ((->) t) where
   a
   -> k b
   -> k a
-(<$) =
-  error "todo: Course.Functor#(<$)"
+(<$) x xs = P.const x <$> xs
 
 -- | Anonymous map producing unit value.
 --
@@ -119,8 +123,7 @@ void ::
   Functor k =>
   k a
   -> k ()
-void =
-  error "todo: Course.Functor#void"
+void xs = P.const () <$> xs
 
 -----------------------
 -- SUPPORT LIBRARIES --

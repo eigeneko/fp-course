@@ -76,8 +76,8 @@ headOr ::
   a
   -> List a
   -> a
-headOr =
-  error "todo: Course.List#headOr"
+headOr _ (x :. _) = x
+headOr k _ = k
 
 -- | The product of the elements of a list.
 --
@@ -92,8 +92,8 @@ headOr =
 product ::
   List Int
   -> Int
-product =
-  error "todo: Course.List#product"
+product (x :. xs) = x * product xs 
+product Nil = 1
 
 -- | Sum the elements of the list.
 --
@@ -107,8 +107,8 @@ product =
 sum ::
   List Int
   -> Int
-sum =
-  error "todo: Course.List#sum"
+sum (x :. xs) = x + sum xs
+sum Nil = 0
 
 -- | Return the length of the list.
 --
@@ -119,8 +119,8 @@ sum =
 length ::
   List a
   -> Int
-length =
-  error "todo: Course.List#length"
+length (_ :. xs) = 1 + length xs
+length Nil = 0
 
 -- | Map the given function on each element of the list.
 --
@@ -134,8 +134,7 @@ map ::
   (a -> b)
   -> List a
   -> List b
-map =
-  error "todo: Course.List#map"
+map f = foldRight (\x xs -> f x :. xs) Nil
 
 -- | Return elements satisfying the given predicate.
 --
@@ -151,8 +150,7 @@ filter ::
   (a -> Bool)
   -> List a
   -> List a
-filter =
-  error "todo: Course.List#filter"
+filter p = foldRight (\x xs -> if p x then x :. xs else xs) Nil
 
 -- | Append two lists to a new list.
 --
@@ -170,8 +168,8 @@ filter =
   List a
   -> List a
   -> List a
-(++) =
-  error "todo: Course.List#(++)"
+(++) = flip $ foldRight (:.)
+-- (++) as bs = flip $ foldRight (:.) bs as
 
 infixr 5 ++
 
@@ -188,8 +186,7 @@ infixr 5 ++
 flatten ::
   List (List a)
   -> List a
-flatten =
-  error "todo: Course.List#flatten"
+flatten = foldRight (++) Nil
 
 -- | Map a function then flatten to a list.
 --
@@ -205,8 +202,7 @@ flatMap ::
   (a -> List b)
   -> List a
   -> List b
-flatMap =
-  error "todo: Course.List#flatMap"
+flatMap f = foldRight (\x r -> f x ++ r) Nil
 
 -- | Flatten a list of lists to a list (again).
 -- HOWEVER, this time use the /flatMap/ function that you just wrote.
@@ -215,8 +211,7 @@ flatMap =
 flattenAgain ::
   List (List a)
   -> List a
-flattenAgain =
-  error "todo: Course.List#flattenAgain"
+flattenAgain = flatMap id
 
 -- | Convert a list of optional values to an optional list of values.
 --
@@ -240,8 +235,12 @@ flattenAgain =
 seqOptional ::
   List (Optional a)
   -> Optional (List a)
-seqOptional =
-  error "todo: Course.List#seqOptional"
+seqOptional = foldRight mergeOptional (Full Nil)
+
+mergeOptional :: Optional a -> Optional (List a) -> Optional (List a)
+mergeOptional Empty _ = Empty
+mergeOptional _ Empty = Empty
+mergeOptional (Full x) (Full xs) = Full (x :. xs)
 
 -- | Find the first element in the list matching the predicate.
 --
@@ -263,8 +262,8 @@ find ::
   (a -> Bool)
   -> List a
   -> Optional a
-find =
-  error "todo: Course.List#find"
+find _ Nil = Empty
+find p (x :. xs) = if p x then Full x else find p xs
 
 -- | Determine if the length of the given list is greater than 4.
 --
@@ -282,8 +281,11 @@ find =
 lengthGT4 ::
   List a
   -> Bool
-lengthGT4 =
-  error "todo: Course.List#lengthGT4"
+-- lengthGT4 = (<) 4 . length 无法处理infinity的情况
+lengthGT4 = countlengthGT4 0
+countlengthGT4 :: Integer -> List a -> Bool
+countlengthGT4 len Nil = len > 4
+countlengthGT4 len (x :. xs) = (len > 4) P.|| countlengthGT4 (len + 1) xs
 
 -- | Reverse a list.
 --
@@ -299,8 +301,13 @@ lengthGT4 =
 reverse ::
   List a
   -> List a
-reverse =
-  error "todo: Course.List#reverse"
+reverse = foldRight (\x b -> b ++ (x :. Nil)) Nil -- 跑take 1 (reverse (reverse largeList))很慢
+
+-- reverse = foldRight (:.) Nil 是不正确的, 并没有实现reverse
+
+-- solution 2
+-- reverse Nil = Nil
+-- reverse (x :. xs) = reverse xs ++ (x :. Nil) -- 跑take 1 (reverse (reverse largeList))很慢 
 
 -- | Produce an infinite `List` that seeds with the given value at its head,
 -- then runs the given function for subsequent elements
@@ -314,8 +321,7 @@ produce ::
   (a -> a)
   -> a
   -> List a
-produce f x =
-  error "todo: Course.List#produce"
+produce f x = x :. produce f (f x)
 
 -- | Do anything other than reverse a list.
 -- Is it even possible?
@@ -329,8 +335,7 @@ produce f x =
 notReverse ::
   List a
   -> List a
-notReverse =
-  error "todo: Is it even possible?"
+notReverse = id
 
 ---- End of list exercises
 

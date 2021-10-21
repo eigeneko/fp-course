@@ -2,6 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RebindableSyntax #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Course.FileIO where
 
@@ -85,46 +86,62 @@ printFile ::
   FilePath
   -> Chars
   -> IO ()
-printFile =
-  error "todo: Course.FileIO#printFile"
+printFile filePath fileContents = putStrLn ("============" ++ filePath) >>
+                                  putStrLn fileContents
 
 -- Given a list of (file name and file contents), print each.
 -- Use @printFile@.
 printFiles ::
   List (FilePath, Chars)
   -> IO ()
-printFiles =
-  error "todo: Course.FileIO#printFiles"
+
+printFiles xs = foldLeft (>>) (pure ()) k
+          where k = map (uncurry printFile) xs
+
+-- printFiles (("a", "aaa") :. ("b", "bbb") :. Nil)
+
+-- 用 pure () 构造一个 IO () 不要用 putStr "" !
+-- printFiles xs = foldLeft (>>) (void (putStr "")) k
+      -- where k = map (uncurry printFile) xs
+
+-- 参考答案
+-- printFiles = void . sequence . (<$>) (uncurry printFile)
+-- (<$>) (uncurry printFile) 等价于 map (uncurry printFile) (<$>)就是List的map
+-- sequence 把 List(IO ()) 转换成 IO (List ()) void把List ()丢弃变成()
+-- 而foldLeft (>>) 是不断应用right apply 把前一个IO的()丢弃
 
 -- Given a file name, return (file name and file contents).
 -- Use @readFile@.
 getFile ::
   FilePath
   -> IO (FilePath, Chars)
-getFile =
-  error "todo: Course.FileIO#getFile"
+getFile path = (,) path <$> readFile path
 
 -- Given a list of file names, return list of (file name and file contents).
 -- Use @getFile@.
 getFiles ::
   List FilePath
   -> IO (List (FilePath, Chars))
-getFiles =
-  error "todo: Course.FileIO#getFiles"
+getFiles paths = sequence (getFile <$> paths)
 
 -- Given a file name, read it and for each line in that file, read and print contents of each.
 -- Use @getFiles@, @lines@, and @printFiles@.
+-- 给定一个入口文件 这个文件的每一行都是一个文件地址 读取这些文件并打印 
 run ::
   FilePath
   -> IO ()
-run =
-  error "todo: Course.FileIO#run"
+run fileName = do 
+               content <- readFile fileName
+               results <- getFiles (lines content)
+               printFiles results
 
 -- /Tip:/ use @getArgs@ and @run@
 main ::
   IO ()
-main =
-  error "todo: Course.FileIO#main"
+main = do
+       getArgs >>= \case
+           fileName :. Nil -> run fileName
+           _ -> putStrLn "input fileName"
 
 ----
 

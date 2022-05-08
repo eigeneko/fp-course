@@ -164,16 +164,32 @@ firstRepeat list = fst $ runState (findM p list) S.empty
 -- prop> \xs -> firstRepeat (distinct xs) == Empty
 --
 -- prop> \xs -> distinct xs == distinct (flatMap (\x -> x :. x :. Nil) xs)
+-- distinct的结果等于列表第一个元素x，加上从剩余元素xs中去掉x再求distinct的结果
+-- 从xs中去掉xs就用了filtering，这种写法其实没有必要用state和Set了，属于强行使用 :)
 distinct ::
   Ord a =>
   List a
   -> List a
-distinct list = fst $ runState (filtering p list) S.empty
-    where p x = (\s -> const (pure (S.notMember x s)) =<< put (S.insert x s)) =<< get
+distinct Nil = Nil
+distinct (x:.xs) = x :. distinct (remove x xs)
+    where remove x xs = fst $ runState (filtering p xs) (S.insert x S.empty)
+    p x = (\s -> const (pure (S.notMember x s)) =<< put (S.insert x s)) =<< get
 
+-- (ﾉ*･ω･)ﾉ
+-- **Monad原教旨主义者的写法**（虽然是我写的，但每次回头看这个都不知道该怎么理解）
+-- distinct list = fst $ runState (filtering p list) S.empty
+--     where p x = (\s -> const (pure (S.notMember x s)) =<< put (S.insert x s)) =<< get
 
-dd list = runState (filtering p list) S.empty
-    where p x = State (\s -> (S.null s, S.insert x s))
+-- <(ˉ^ˉ)>
+-- **正常人的写法** （好好写不要装逼）
+-- distinct list = fst $ runState (filtering p list) S.empty
+--     where p x = State (\s -> (S.null s, S.insert x s))
+
+-- w(ﾟДﾟ)w
+-- 注意以上两种实现均不正确，根据自己对上面State的<*>的实现，利用定义展开，这里filtering相当于把每个State用<*>进行组合，A <*> B <*> C <*> D ....  
+-- 因为<*>是左结合的，A <*> B <*> C <*> D 等价于 ((A <*> B) <*> C) <*> D, 所以输入的s被分别传递给了((A <*> B) <*> C) 和 D
+-- 在((A <*> B) <*> C)中s又被分别传递给了(A <*> B)和C，最后的效果相当于s被分别传递给了ABCD，所以这里的S.empty实际被分别作用在了filering中的每个State上
+-- 向Set里插入元素其实是无效的，最后的效果是S.notMember x s中的s永远是空集，起不到任何判断的作用。
 
 
 -- | A happy number is a positive integer, where the sum of the square of its digits eventually reaches 1 after repetition.

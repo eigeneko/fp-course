@@ -173,7 +173,7 @@ distinct ::
 distinct Nil = Nil
 distinct (x:.xs) = x :. distinct (remove x xs)
     where remove x xs = fst $ runState (filtering p xs) (S.insert x S.empty)
-    p x = (\s -> const (pure (S.notMember x s)) =<< put (S.insert x s)) =<< get
+          p x = (\s -> const (pure (S.notMember x s)) =<< put (S.insert x s)) =<< get
 
 -- (ﾉ*･ω･)ﾉ
 -- **Monad原教旨主义者的写法**（虽然是我写的，但每次回头看这个都不知道该怎么理解）
@@ -216,5 +216,14 @@ distinct (x:.xs) = x :. distinct (remove x xs)
 isHappy ::
   Integer
   -> Bool
-isHappy =
-  error "todo: Course.State#isHappy"
+isHappy x = contains 1 (firstRepeat (produce sumOfDigitSquare x))
+
+sumOfDigitSquare ::
+  Integer
+  -> Integer
+sumOfDigitSquare x = toInteger (sum (map square $ digitSeq x))
+  where square = join (*)
+        digitSeq = map digitToInt . show'
+
+-- 注意digitToInt 和sum 都产生的是Int 所以需要用toInteger转换为Integer
+-- 由于使用了我们自己实现的List, show要用show'

@@ -80,6 +80,8 @@ instance Functor Optional where
   (<$>) _ Empty = Empty
   (<$>) f (Full x) = Full (f x)
 
+-- (<$>) f = optional (Full . f) Empty
+
 -- | Maps a function on the reader ((->) t) functor.
 --
 -- >>> ((+1) <$> (*2)) 8
@@ -90,6 +92,10 @@ instance Functor ((->) t) where
     -> (->) t a
     -> (->) t b
   (<$>) f g = f . g
+
+-- (<$>) = (.)
+
+-- f <$> g = \x -> f (g x)
 
 -- | Anonymous map. Maps a constant value on a functor.
 --
@@ -105,6 +111,8 @@ instance Functor ((->) t) where
   -> k b
   -> k a
 (<$) x xs = P.const x <$> xs
+
+-- (<$) = (<$>) . const
 
 -- | Anonymous map producing unit value.
 --
@@ -124,6 +132,8 @@ void ::
   k a
   -> k ()
 void xs = P.const () <$> xs
+
+-- void = (<$) ()
 
 -----------------------
 -- SUPPORT LIBRARIES --
